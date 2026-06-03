@@ -137,7 +137,8 @@ def build_scenario_row(base_climate, base_year, delta_year, scenario, last_yield
 # ── 3. Run scenario forecasts ─────────────────────────────────────────────────
 def run_forecasts(clean, climate):
     results = []
-    base_year = 2025  # use 2025 as the anchor
+    base_year = climate["year"].max()  # use the most recent year available
+    print(f"  Using {base_year} as forecast base year")
 
     # Load the climate-only CatBoost model
     model_path = None
@@ -247,14 +248,12 @@ def plot_forecasts(forecast_df, clean):
 
 
 def plot_early_warning(clean, climate):
-    precip_mean = climate["precip_grow_mm"].mean()
-    temp_mean   = climate["temp_grow_c"].mean()
+    precip_mean = clean["precip_grow_mm"].mean()
+    temp_mean   = clean["temp_grow_c"].mean()
     DROUGHT_YEARS = [1995, 2000, 2008, 2012, 2018]
 
     fig, axes = plt.subplots(1, 2, figsize=(13, 5))
-    wheat = clean[clean["crop"] == "Wheat"].merge(
-        climate[["year", "precip_grow_mm", "temp_grow_c"]], on="year", how="left"
-    )
+    wheat = clean[clean["crop"] == "Wheat"].copy()
     wheat["precip_anom"] = wheat["precip_grow_mm"] - precip_mean
     wheat["temp_anom"]   = wheat["temp_grow_c"]   - temp_mean
     wheat["yield_anom"]  = (wheat["yield_hg_ha"] - wheat["yield_hg_ha"].mean()) \
@@ -324,7 +323,7 @@ def main():
 
     status_path = os.path.join(PROCESSED_DIR, "early_warning_status.json")
     with open(status_path, "w") as f:
-        json.dump(status, f, indent=2)
+        json.dump(status, f, indent=2, default=lambda o: o.item() if hasattr(o, 'item') else str(o))
     print(f"\n  Saved: {status_path}")
 
     # Historical threshold analysis figure

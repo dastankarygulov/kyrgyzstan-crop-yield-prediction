@@ -203,16 +203,15 @@ def plot_correlations(clean):
 
 # ── Figure 8: Climate anomaly vs yield anomaly ─────────────────────────────
 def plot_anomaly_map(clean, climate):
-    precip_mean = climate["precip_grow_mm"].mean()
-    temp_mean   = climate["temp_grow_c"].mean()
+    precip_mean = clean["precip_grow_mm"].mean()
+    temp_mean   = clean["temp_grow_c"].mean()
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     crop_colors = {"Wheat": C["wheat"], "Barley": C["barley"], "Potato": C["potato"]}
 
     for ax, crop in zip(axes, CROPS):
-        sub = clean[clean["crop"] == crop].merge(
-            climate[["year", "precip_grow_mm", "temp_grow_c"]], on="year", how="left"
-        ).dropna()
+        sub = clean[clean["crop"] == crop].copy()
+        sub = sub.dropna(subset=["precip_grow_mm", "temp_grow_c", "yield_hg_ha"])
 
         sub["precip_anom"] = sub["precip_grow_mm"] - precip_mean
         sub["temp_anom"]   = sub["temp_grow_c"] - temp_mean
